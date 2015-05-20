@@ -1,0 +1,197 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>Unibabel</title>
+    <script src="bower_components/unibabel/index.js"></script>
+    <script src="crypto.js"></script>
+    <script src="app.js"></script>
+    <script src="browser.js"></script>
+    <link href="//maxcdn.bootstrapcdn.com/bootswatch/3.3.4/flatly/bootstrap.min.css" rel="stylesheet" />
+  </head>
+  <body>
+    <div class="container">
+      <div class="row">
+        <div class="col-xs-12">
+          <h1>Unicode (!¶☢☃𩶘𝄢), WebCrypto, and You</h1>
+          <h2>How can I get a SHA-1 sum of a unicode string?</h2>
+          <p>Let's talk about that... It's actually a lot more difficult than you would think.</p>
+          <h3>TL;DR</h3>
+          <pre><code>bower install unibabel</code></pre>
+          <pre><code>var buffer = window.Unibabel.strToUtf8Arr("I♥☢𝄢");
+console.log(buffer);
+
+var base64 = window.Unibabel.arrToBase64(buffer);
+console.log(base64); // SeKZpeKYou2gtO20og==
+
+window.crypto.subtle.digest("SHA-1", buffer);
+// Promies contains buffer, as hex: da548f7a00f799317d9ba6c03a6ee9d14065223d</code></pre>
+          <h3>Naive Approach</h3>
+          <p></p>
+          <pre><code>var text = "Hello World!";
+var textLen = text.length;
+var buffer = new Uint8Array(textLen);
+var index;
+
+//
+// Create the Buffer from the String
+//
+for (index = 0; index < textLen; index += 1) {
+  // most browsers now support text.codePointAt(index), which is better
+  // WARNING buffer[index] = text[index] WILL FAIL SILENTLY
+  buffer[index] = text.charCodeAt(index);
+}
+
+//
+// Create and print SHA-1 Hash
+//
+function printHex(sha1buf) {
+  console.log(sha1buf);
+  var hex = bufferToHex(sha1buf); // implementation in appendix
+  console.log(hex);
+}
+
+function printErr(err) {
+  console.error(err);
+}
+
+window.crypto.subtle.digest("SHA-1", buffer).then(printHex, printErr);</code></pre>
+          <h3>The Unicode Problem</h3>
+          <p>Now let's consider that we're in 2015, not 1986:</p>
+          <table class="table table-bordered">
+            <tr>
+              <td>1-byte</td>
+              <td>~</td>
+              <td>a</td>
+              <td>0</td>
+              <td>!</td>
+            </tr>
+            <tr>
+              <td>2-byte</td>
+              <td>¶</td>
+              <td>¢</td>
+              <td>ε</td>
+              <td>ñ</td>
+            </tr>
+            <tr>
+              <td>3-byte</td>
+              <td>♥</td>
+              <td>☢</td>
+              <td>☃</td>
+              <td>‱</td>
+            </tr>
+            <tr>
+              <td>6-byte</td>
+              <td>𩶘</td>
+              <td>𐑶</td>
+              <td>𐐦</td>
+              <td>𝄢</td>
+            </tr>
+          </table>
+          <p>Our users use weird symbols (💩) and, surprise surprise, they don't all speak ASCII English.</p>
+          <p>Also, check out these
+          <a href="https://groups.google.com/forum/#!topic/utahjs/P4iEIlPa81g">full-color symbols</a>.
+          </p>
+          <pre><code>var radSnoBass = "I ♥ ☢ 𝄢!";              // 6 chars
+Unibabel.strToUtf8Arr(radSnoBass).length; // 17 bytes
+
+"I".length;                               // 1 char
+Unibabel.strToUtf8Arr("I").length;        // 1 byte
+
+"♥".length;                               // 1 char
+Unibabel.strToUtf8Arr("♥").length;        // 2 bytes
+
+"☢".length;                               // 1 char
+Unibabel.strToUtf8Arr("☢").length;        // 3 bytes
+
+"𝄢".length;                               // 2 chars WHAT!?!?
+Unibabel.strToUtf8Arr("𝄢").length;        // 6 bytes
+
+var happyBuf = Unibabel.strToUtf8Arr(radSnoBass);</code></pre>
+
+          <p>So what's wrong with this? Well... a lot.</p>
+          <ul>
+            <li>JavaScript uses UCS2. Not UTF-8. Not Unicode.
+            <li>^^ I don't know what that means, but it's BAD!!!
+            <li>It gives us a bad charater count for characters.
+            <li>It gives us a bad byte count.
+            <li>We can't loop over characters!
+          </ul>
+          <p>Let's take a look</p>
+          <pre><code>var text = "I♥☢𝄢"; // aka "I Love Radioactive Bass"
+var textLen = text.length;
+var buffer = new Uint8Array(textLen);
+var index;
+
+for (index = 0; index < textLen; index += 1) {
+  console.log('char[' + index + ']', text[index]
+    , text.charCodeAt(index), text.codePointAt(index));
+
+  buffer[index] = text.charCodeAt(index);
+
+  console.log('buffer[' + index + ']', buffer[index]);
+}
+
+window.crypto.subtle.digest("SHA-1", buffer).then(printHex, printErr);
+// BAD!: da548f7a00f799317d9ba6c03a6ee9d14065223d
+// compare with `echo "I♥☢𝄢" | shasum`
+// Good: d5bb644c3a9f517bec9c36400cbc449be271f65f</code></pre>
+
+          <h3>Mozilla's Solution</h3>
+          <p>I took MDN's <a href="https://developer.mozilla.org/en-US/docs/Web/API/WindowBase64/Base64_encoding_and_decoding">sample code</a>
+          and published it as <a href="https://github.com/coolaj86/unibabel-js">unibabel</a> on bower</p>
+          <p>How does it work?</p>
+          <p>Magic.<br>'nuf said</p>
+          <p>Check out the article (above) if you're really interested.
+          It's a bunch of double and triple bit-shifting and other similar nonsense
+          that I don't care to think about, but for which I am very grateful.</p>
+
+          <pre><code>bower install unibabel</code></pre>
+          <pre><code>var buffer = window.Unibabel.strToUtf8Arr("I♥☢𝄢");
+console.log(buffer);
+
+// Unibabel also supports base64 conversion, if you need it
+window.Unibabel.arrToBase64(buffer); // SeKZpeKYou2gtO20og==
+
+window.crypto.subtle.digest("SHA-1", buffer).then(printHex, printErr);
+// YAY! da548f7a00f799317d9ba6c03a6ee9d14065223d</code></pre>
+
+          <h2>Can I encrypt in node and decrypt in the browser?</h2>
+
+          <p>What do you get when you mix an Elephant with a Rhino?</p>
+
+          <p>Let's try!</p>
+
+          <p>aes-256-cbc</p>
+
+          <h2>Appendix</h2>
+
+          <pre><code>function bufferToHex(buf) {
+  // NOTE: new Uint8Array(sha1buf) would create a mutable copy, whereas a DataView does not
+  var dv = new DataView(buf)
+  var i;
+  var len;
+  var hex = '';
+  var c;
+
+  for (i = 0, len = dv.byteLength; i < len; i += 1) {
+    c = dv.getUint8(i).toString(16);
+    if (c.length < 2) {
+      c = '0' + c;
+    }
+    hex += c;
+  }
+
+  return hex;
+}</code></pre>
+          <p>Helpful Hints:</p>
+          <ul>
+            <li><a href="https://github.com/diafygi/webcrypto-examples#aes-cbc---generatekey">WebCrytpo AES Examples</a></li>
+            <li><a href="https://github.com/diafygi/webcrypto-examples#hmac">WebCrypto HMAC Examples</a></li>
+            <li><a href="http://en.wikipedia.org/wiki/List_of_Unicode_characters">WikiPedia List of Unicode characters</a></li>
+            <li><a href="http://www.unicode.org/charts/#symbols">Unicode Charts</a></li>
+          </ul>
+        </div>
+      </div>
+    </div>
+  </body>
+</html>

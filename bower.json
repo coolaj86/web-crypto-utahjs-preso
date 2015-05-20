@@ -1,0 +1,25 @@
+{
+  "name": "web-crytpo-utahjs-preso",
+  "version": "1.0.0-rc1",
+  "homepage": "https://github.com/coolaj86/web-crypto-utahjs-preso",
+  "authors": [
+    "AJ ONeal <awesome@coolaj86.com>"
+  ],
+  "description": "Playing around with UTF8 and WebCrypto",
+  "main": "app.js",
+  "moduleType": [
+    "globals",
+    "node"
+  ],
+  "license": "Apache2",
+  "ignore": [
+    "**/.*",
+    "node_modules",
+    "bower_components",
+    "test",
+    "tests"
+  ],
+  "dependencies": {
+    "unibabel": "~1.0.0-rc1"
+  }
+}

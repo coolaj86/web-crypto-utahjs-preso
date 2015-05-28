@@ -1,43 +1,72 @@
 'use strict';
 
 var crypto = require("crypto");
-//var encrypted = "dPluq7hwg9nML6DAlAoANOHy15fQCoxCOjr3Aah6bnygTNtLJ8MhFKYjlTXtIK0SulCQqI4x7tQEedo3tFmeB5ugoESAm8Fd7aqxrNk9JoHqJbwyTIKriSAvyKdfqUKWelDYvr35xEKrdF1wvoj5m2sDS4ppGgtRfXtzz2ZjTZHzja/jzicharb8gVOrIgqr";
-//var encrypted = "dPluq7hwg9nML6DAlAoANB4niyGBB8EOWqwG9Nsc+if3n2RuRhmOmupvAZN9wk8o";
-//var encrypted = "WZZZ2zQiDBapiAkmA+CCMJM6x8K66bToJ9PsBW/hxBoy9OnTZ3Q78O15NK0vbgkOHoM4Mo63I8CbGHtHzaDG4+bnOS9KyFjt2K3VcVRqLlNCr6Nba24snDLZHvWTeRQu";
-//var buffer = new Buffer(encrypted, 'base64');
-var encrypted = "2f1b2c38b118bc635c0e6859495f9ff562f2ef37db4641ecd00f138d5bb583be2e49ba33e87b58d528b56a3bfc0877f2880594f1a79807bb8d6240c2461171b5551135de41800ac6133079093d1f0bb057c86ece2e88a845d3dda84e216a9712";
-var buffer = new Buffer(encrypted, 'hex');
-//var keyBuf = new Buffer('VzC2coGPrvecrigzB38DRLGiwVrgiwnQznyrD9BYxAk=', 'base64');
-var keyBuf = new Buffer('a29944a586a03d56ea963bdfca3879aac4a5a44da935fe883ec7909aeca9b040', 'hex');
-// key = crypto.randomBytes((256 / 8)).toString('base64')
-// required 256 bits (same as keysize)
-console.log(keyBuf);
 
-function createIv() {
-  // IV is always (?) 128-bit
-  var ivLen = (128 / 8);
-  var iv = new Buffer(ivLen);
-  var i;
-  for (i = 0; i < ivLen; i += 1) {
-    iv[i] = 0;
+function decrypt(encBase64, iv, keyBuf) {
+  var buffer = new Buffer(encBase64, 'base64');
+  // required 256 bits (same as keysize)
+
+  var decipher = crypto.createDecipheriv('aes-256-cbc', keyBuf, iv);
+  var message = decipher.update(buffer, null, 'utf8');
+  message += decipher.final('utf8');
+
+  // "this is a secret message"
+  console.log(message);
+}
+
+function deriveKey(saltBuf, passphrase) {
+  var iterations = 100;
+  var keyLenBits = 256;
+  var keyLenBytes = (keyLenBits / 8);
+  var digest = 'sha256';
+
+  return new global.Promise(function (resolve, reject) {
+    crypto.pbkdf2(passphrase, saltBuf, iterations, keyLenBytes, digest, function (err, key) {
+      if (err) {
+        reject(err);
+        return;
+      }
+
+      console.log('');
+      console.log('passphrase', passphrase);
+      console.log('salt (hex)', saltBuf.toString('hex'));
+      console.log('iterations', iterations);
+      console.log('keyLen (bytes)', keyLenBytes);
+      console.log('digest', digest);
+
+      console.log('');
+      console.log('key len', key.length);
+      console.log('key hex', key.toString('hex'));
+      console.log('key base64', key.toString('base64'));
+      resolve(key);
+    });
+  });
+}
+
+function run(keyBuf, data) {
+  // TODO derive IV from key buffer
+  function createIv() {
+    // IV is always (?) 128-bit
+    var ivLen = (128 / 8);
+    var iv = new Buffer(ivLen);
+    var i;
+    for (i = 0; i < ivLen; i += 1) {
+      iv[i] = 0;
+    }
+
+    return iv;
   }
 
-  return iv;
+  var encBase64 = data.toString('base64');
+  var iv = createIv();
+
+  decrypt(encBase64, iv, keyBuf);
 }
 
-/*
-function createIv(buf) {
-  // IV is always (?) 128-bit
-  var ivLen = (128 / 8);
-  var iv = buf.slice(0, ivLen);
-  return iv;
-}
-*/
-
-var iv = createIv(keyBuf);
-var decipher = crypto.createDecipheriv('aes-256-cbc', keyBuf, iv);
-var message = decipher.update(buffer, null, 'utf8');
-console.log(message);
-message += decipher.final('utf8');
-
-console.log(message); // "this is a secret message"
+deriveKey(
+  new Buffer('6FxT5/EZ1B/XiVzcnXu53RneW6vSwf30uNrXyzNE2IY=', 'base64')
+, "wicked awesome sauce!"
+).then(function (keyBuf) {
+  var encryptedBuf = new Buffer('1e693c98e821caf916ec20bed7b6e1d7c4e741d67211a8568398f35c01de469e2fc9c6cb641e238c779f338601e7f12505e4d3af557f748472a58efbdae805dac72a291d1a4623afe435352c563a24485ba58b8d7267adf814c9ad6bb5f370ed', 'hex');
+  return run(keyBuf, encryptedBuf);
+});

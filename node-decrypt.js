@@ -67,6 +67,7 @@ deriveKey(
   new Buffer('6FxT5/EZ1B/XiVzcnXu53RneW6vSwf30uNrXyzNE2IY=', 'base64')
 , "wicked awesome sauce!"
 ).then(function (keyBuf) {
-  var encryptedBuf = new Buffer('1e693c98e821caf916ec20bed7b6e1d7c4e741d67211a8568398f35c01de469e2fc9c6cb641e238c779f338601e7f12505e4d3af557f748472a58efbdae805dac72a291d1a4623afe435352c563a24485ba58b8d7267adf814c9ad6bb5f370ed', 'hex');
+  //var encryptedBuf = new Buffer('1e693c98e821caf916ec20bed7b6e1d7c4e741d67211a8568398f35c01de469e2fc9c6cb641e238c779f338601e7f12505e4d3af557f748472a58efbdae805dac72a291d1a4623afe435352c563a24485ba58b8d7267adf814c9ad6bb5f370ed', 'hex');
+  var encryptedBuf = new Buffer('Hmk8mOghyvkW7CC+17bh18TnQdZyEahWg5jzXAHeRp4vycbLZB4jjHefM4YB5/ElBeTTr1V/dIRypY772ugF2scqKR0aRiOv5DU1LFY6JEhbpYuNcmet+BTJrWu183Dt', 'base64');
   return run(keyBuf, encryptedBuf);
 });

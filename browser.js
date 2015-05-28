@@ -15,13 +15,13 @@ var stringToArrayBuffer = Unibabel.strToUtf8Arr;
 
 function encrypt(keyBuf, data) {
   //var keyStr = 'VzC2coGPrvecrigzB38DRLGiwVrgiwnQznyrD9BYxAk=';
-  //var keyBuf = window.Unibabel.base64ToArr(keyStr);
+  //var keyBuf = Unibabel.base64ToArr(keyStr);
   //var message = "this is a secret message !¶☢☃𩶘𝄢";
   var ivLen = (128 / 8);
   var iv = new Uint8Array(ivLen); // defaults to all 0s, which is fine for this demo
   // TODO derive iv from key?
   //var iv = new Uint8Array(keyBuf.slice(0, ivLen));
-  //var arrb = window.Unibabel.strToUtf8Arr(message);
+  //var arrb = Unibabel.strToUtf8Arr(message);
   //var data = arrb.buffer;
   //console.log('message as buffer', arrb.length);
   //console.log(arrb);
@@ -31,62 +31,66 @@ function encrypt(keyBuf, data) {
   console.log(keyBuf);
 
   return webcrypto.subtle.importKey(
-      "raw",
-      keyBuf,
-      { name: "AES-CBC" },
-      true,
-      ["encrypt", "decrypt"]
+    "raw",
+    keyBuf,
+    { name: "AES-CBC" },
+    true,
+    ["encrypt", "decrypt"]
   )
   .then(function(key){
-      //returns the symmetric key
-      console.log('key', key);
-      var algo = key.algorithm;
-      algo.iv = iv;
+    //returns the symmetric key
+    console.log('key', key);
+    var algo = key.algorithm;
+    algo.iv = iv;
 
-      return webcrypto.subtle.encrypt(
-          algo,
-          key, //from generateKey or importKey above
-          data //ArrayBuffer of data you want to encrypt
-      ).then(function(encrypted){
+    return webcrypto.subtle.encrypt(
+        algo,
+        key, //from generateKey or importKey above
+        data //ArrayBuffer of data you want to encrypt
+    ).then(function(encrypted){
+      var encArr = new Uint8Array(encrypted);
+      var encBase64 = Unibabel.arrToBase64(encArr);
+
+      //returns an ArrayBuffer containing the encrypted data
+      // TODO base64
+      //console.log(new Uint8Array(encrypted));
+      console.log('encrypted', encArr.length, encArr);
+      console.log('encrypted', JSON.stringify(encBase64));
+      console.log('encrypted', encBase64);
+
+      return webcrypto.subtle.decrypt(
+        algo,
+        key, //from generateKey or importKey above
+        encrypted //ArrayBuffer of data you want to encrypt
+      )
+      .then(function(decrypted){
+        var decArr = new Uint8Array(decrypted);
+        var decStr = Unibabel.utf8ArrToStr(decArr);
+
         //returns an ArrayBuffer containing the encrypted data
-        // TODO base64
-        //console.log(new Uint8Array(encrypted));
-        console.log('encrypted');
         console.log(new Uint8Array(encrypted));
-        console.log(new Uint8Array(encrypted).length);
+        console.log('decrypted', decStr);
 
-        console.log('encrypted', window.Unibabel.arrToBase64(new Uint8Array(encrypted)));
-
-        return webcrypto.subtle.decrypt(
-            algo,
-            key, //from generateKey or importKey above
-            encrypted //ArrayBuffer of data you want to encrypt
-        )
-        .then(function(decrypted){
-            //returns an ArrayBuffer containing the encrypted data
-            console.log(new Uint8Array(encrypted));
-            console.log('decrypted', window.Unibabel.utf8ArrToStr(new Uint8Array(decrypted)));
-
-            return encrypted;
-        })
-
-
-
-
-
-
-         // error handling
-
-        .catch(function(err){
-            console.error(err);
-        });
+        return encrypted;
       })
+
+
+
+
+
+
+       // error handling
+
       .catch(function(err){
-          console.error(err);
+        console.error(err);
       });
+    })
+    .catch(function(err){
+      console.error(err);
+    });
   })
   .catch(function(err){
-      console.error(err);
+    console.error(err);
   });
 }
 
@@ -148,6 +152,7 @@ $(function () {
     var saltHex = $('.js-crypto-salt').val();
     var saltBuf = hex2ab(saltHex);
     var msg = Unibabel.strToUtf8Arr($('.js-crypto-msg').val()).buffer;
+
     console.log('passphrase');
     console.log(passphrase);
     console.log('salt hex');
@@ -170,8 +175,8 @@ $(function () {
       $('.js-crypto-key').val(keyHex);
       return encrypt(keyBuf, msg).then(function (buf) {
         console.log('ciphered buf', buf);
-        $('.js-crypto-ciphered').val(ab2hex(buf));
-        //$('.js-crypto-ciphered').val(Unibabel.arrToBase64(new Uint8Array(buf)));
+        //$('.js-crypto-ciphered').val(ab2hex(buf));
+        $('.js-crypto-ciphered').val(Unibabel.arrToBase64(new Uint8Array(buf)).replace(/["\r\n]/g, ''));
       });
     });
   }

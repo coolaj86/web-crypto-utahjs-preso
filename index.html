@@ -2,6 +2,7 @@
 <html>
   <head>
     <title>Unibabel</title>
+    <script src="//code.jquery.com/jquery-2.1.4.js"></script>
     <script src="bower_components/unibabel/index.js"></script>
     <script src="crypto.js"></script>
     <script src="app.js"></script>
@@ -15,6 +16,52 @@
           <h1>Unicode (!¶☢☃𩶘𝄢), WebCrypto, and You</h1>
           <h2>How can I get a SHA-1 sum of a unicode string?</h2>
           <p>Let's talk about that... It's actually a lot more difficult than you would think.</p>
+        </div>
+      </div>
+      <div class="row">
+        <div class="col-xs-12">
+          <form>
+            <div class="form-group">
+              <label>Message (utf-8)</label>
+              <input
+                class="form-control js-crypto-msg"
+                type="text" value="I'm a ☢ ☃ who speaks 中国语文, loves 𝄢 guitar, and plays in 💩!" />
+            </div>
+            <div class="form-group">
+              <label>SHA-1 (hex)</label>
+              <input
+                class="form-control js-crypto-sha1"
+                type="text" disabled="disabled" />
+            </div>
+            <div class="form-group">
+              <label>Passphrase (utf-8)</label>
+              <input
+                class="form-control js-crypto-passphrase"
+                type="text" value="wicked awesome sauce!" />
+            </div>
+            <div class="form-group">
+              <label>Salt (hex)</label>
+              <input
+                class="form-control js-crypto-salt"
+                type="text" disabled="disabled" />
+            </div>
+            <div class="form-group">
+              <label>Key (hex)</label>
+              <input
+                class="form-control js-crypto-key"
+                type="text" disabled="disabled" />
+            </div>
+            <div class="form-group">
+              <label>Ciphered (Base64)</label>
+              <textarea
+                class="form-control js-crypto-ciphered"
+                type="text" disabled="disabled" ></textarea>
+            </div>
+          </form>
+        </div>
+      </div>
+      <div class="row">
+        <div class="col-xs-12">
           <h3>TL;DR</h3>
           <pre><code>bower install unibabel</code></pre>
           <pre><code>var buffer = window.Unibabel.strToUtf8Arr("I♥☢𝄢");
@@ -25,6 +72,10 @@ console.log(base64); // SeKZpeKYou2gtO20og==
 
 window.crypto.subtle.digest("SHA-1", buffer);
 // Promies contains buffer, as hex: da548f7a00f799317d9ba6c03a6ee9d14065223d</code></pre>
+        </div>
+      </div>
+      <div class="row">
+        <div class="col-xs-12">
           <h3>Naive Approach</h3>
           <p></p>
           <pre><code>var text = "Hello World!";
@@ -136,7 +187,17 @@ window.crypto.subtle.digest("SHA-1", buffer).then(printHex, printErr);
 // compare with `echo "I♥☢𝄢" | shasum`
 // Good: d5bb644c3a9f517bec9c36400cbc449be271f65f</code></pre>
 
-          <h3>Mozilla's Solution</h3>
+          <h3>TextEncoder / TextDecoder</h3>
+          <p>After writing this demo I found out about another new API</p>
+          <pre><code>var encoder = new TextEncoder("utf-8");
+var buf = encoder.encode("!¶☢☃𩶘𝄢");
+console.log(buf);
+
+var decoder = new TextDecoder("utf-8");
+var msg = decoder.decode(buf)
+console.log(msg);</code></pre>
+
+          <h3>Mozilla's Cross-Browser Solution</h3>
           <p>I took MDN's <a href="https://developer.mozilla.org/en-US/docs/Web/API/WindowBase64/Base64_encoding_and_decoding">sample code</a>
           and published it as <a href="https://github.com/coolaj86/unibabel-js">unibabel</a> on bower</p>
           <p>How does it work?</p>
@@ -185,10 +246,14 @@ window.crypto.subtle.digest("SHA-1", buffer).then(printHex, printErr);
 }</code></pre>
           <p>Helpful Hints:</p>
           <ul>
+            <li><a href="http://blog.engelke.com/tag/webcrypto/">Tons of Crazy WebCrypto Examples (via blog.engelke.com)</a></li>
             <li><a href="https://github.com/diafygi/webcrypto-examples#aes-cbc---generatekey">WebCrytpo AES Examples</a></li>
             <li><a href="https://github.com/diafygi/webcrypto-examples#hmac">WebCrypto HMAC Examples</a></li>
             <li><a href="http://en.wikipedia.org/wiki/List_of_Unicode_characters">WikiPedia List of Unicode characters</a></li>
-            <li><a href="http://www.unicode.org/charts/#symbols">Unicode Charts</a></li>
+            <li><a href="http://www.unicode.org/charts/#symbols">Unicode.org Charts</a></li>
+            <li><a href="http://connect2id.com/blog/user-passwords-should-never-leave-the-browser">Passwords should never leave the browser</a></li>
+            <li><a href="http://anandam.name/pbkdf2/">PBKDF2 Ployfill</a></li>
+            <li><a href="https://iojs.org/api/crypto.html#crypto_crypto_createcipheriv_algorithm_key_iv">node.js crypto</a></li>
           </ul>
         </div>
       </div>

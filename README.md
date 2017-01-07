@@ -1,7 +1,2 @@
-# web-crypto-utahjs-preso
-Playing around with UTF8 and WebCrypto
-
-```
-bower install unibabel
-open index.html
-```
+# Moved
+### [web-crypto-utahjs-preso](https://git.daplie.com/coolaj86/web-crypto-utahjs-preso) is now at [git.daplie.com/coolaj86/web-crypto-utahjs-preso](https://git.daplie.com/coolaj86/web-crypto-utahjs-preso)
